@@ -50,9 +50,9 @@ export default function InputZone({
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type.startsWith("image/")) return <Image size={24} color="#3b82f6" />;
-    if (file.type === "application/pdf") return <FileText size={24} color="#8b5cf6" />;
-    return <File size={24} color="#06b6d4" />;
+    if (file.type.startsWith("image/")) return <Image size={24} color="#3b82f6" aria-label="Image file icon" role="img" />;
+    if (file.type === "application/pdf") return <FileText size={24} color="#8b5cf6" aria-label="PDF file icon" role="img" />;
+    return <File size={24} color="#06b6d4" aria-label="Generic file icon" role="img" />;
   };
 
   const formatSize = (bytes: number) => {

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProModel, getFlashModel } from "@/lib/gemini";
+import { z } from "zod";
+import xss from "xss";
+import { saveAnalysisToFirestore, publishCriticalAlert } from "@/lib/gcp";
 
 // Force dynamic: prevents Next.js from statically evaluating this route at build time.
 // The Gemini API key is only available at runtime (Cloud Run env vars), not during `npm run build`.
@@ -25,13 +28,22 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    const body = await request.json();
-    const { module, text, fileData, mimeType } = body as {
-      module: ModuleType;
-      text?: string;
-      fileData?: string;
-      mimeType?: string;
-    };
+    const RequestSchema = z.object({
+      module: z.enum(["mediscan", "voicebridge", "docunlock", "newsfilter", "safetynet"]),
+      text: z.string().optional(),
+      fileData: z.string().optional(),
+      mimeType: z.string().optional(),
+    });
+
+    const parsedBody = RequestSchema.safeParse(await request.json());
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, error: "Invalid payload format" }, { status: 400 });
+    }
+
+    const { module, text, fileData, mimeType } = parsedBody.data;
+
+    // Sanitize any free-form text input to prevent XSS bleeding into AI prompts
+    const sanitizedText = text ? xss(text) : undefined;
 
     if (!module || !PROMPTS[module]) {
       return NextResponse.json({ success: false, error: "Invalid module specified" }, { status: 400 });
@@ -49,8 +61,8 @@ export async function POST(request: NextRequest) {
       contentParts.push({ inlineData: { data: fileData, mimeType } });
     }
 
-    const inputText = text
-      ? `${prompt}\n\nINPUT TO ANALYZE:\n${text}`
+    const inputText = sanitizedText
+      ? `${prompt}\n\nINPUT TO ANALYZE:\n${sanitizedText}`
       : `${prompt}\n\nAnalyze the provided file/image above and extract all relevant information.`;
 
     contentParts.push({ text: inputText });
@@ -72,11 +84,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fire-and-forget background tasks: Google Cloud Firestore + Pub/Sub
+    const executionTime = Date.now() - startTime;
+    Promise.all([
+      saveAnalysisToFirestore(module, parsed),
+      ...parsed.criticalFlags?.map((flag: any) =>
+        publishCriticalAlert(module, flag.urgency, flag.flag)
+      ) || []
+    ]).catch(console.error);
+
     return NextResponse.json({
       success: true,
       module,
       result: parsed,
-      processingTime: Date.now() - startTime,
+      processingTime: executionTime,
     });
   } catch (error: unknown) {
     console.error("Analysis error:", error);

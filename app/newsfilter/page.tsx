@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { logClientEvent } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Newspaper, Zap, Globe, Clock, Users, CheckCircle, TrendingUp, Download, ShieldCheck, AlarmClock, Crosshair, Scale, AlertTriangle } from "lucide-react";
@@ -28,6 +29,7 @@ export default function NewsFilterPage() {
     if (!text.trim()) { toast.error("Please paste a news article or text"); return; }
     setLoading(true); setResult(null);
     try {
+      logClientEvent("newsfilter", "analyze_started");
       const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ module: "newsfilter", text }) });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Analysis failed");

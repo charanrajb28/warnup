@@ -6,6 +6,7 @@ import {
   ArrowRight, Zap, Brain, Globe, ChevronRight, Sparkles,
   CheckCircle, Activity
 } from "lucide-react";
+import LiveFeed from "@/components/LiveFeed";
 
 const modules = [
   {
@@ -234,7 +235,7 @@ export default function HomePage() {
             structured, verified, and life-saving intelligence.
           </p>
 
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
             <Link href="/mediscan" className="btn-primary" style={{ fontSize: 16, padding: "14px 32px" }}>
               <Stethoscope size={18} />
               Start with MediScan
@@ -244,6 +245,10 @@ export default function HomePage() {
               <Mic size={16} />
               Try VoiceBridge
             </Link>
+          </div>
+          
+          <div style={{ maxWidth: 500, margin: "0 auto" }}>
+            <LiveFeed />
           </div>
         </motion.div>
 

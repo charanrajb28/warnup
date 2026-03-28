@@ -27,9 +27,9 @@ export default function RootLayout({
         <div className="orb" style={{ width: 400, height: 400, bottom: -100, left: "30%", background: "rgba(6,182,212,0.04)" }} />
         <div className="noise-overlay" />
         <div className="grid-bg" style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
+        <main role="main" style={{ position: "relative", zIndex: 1 }}>
           {children}
-        </div>
+        </main>
         <Toaster
           position="top-right"
           toastOptions={{

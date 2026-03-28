@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { logClientEvent } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { AlertOctagon, Zap, MapPin, AlertTriangle, Clock, Radio, Flame, Briefcase, Download, Crosshair } from "lucide-react";
@@ -23,6 +24,7 @@ export default function SafetyNetPage() {
     if (!text && !file) { toast.error("Provide an emergency description or upload a photo"); return; }
     setLoading(true); setResult(null);
     try {
+      logClientEvent("safetynet", "analyze_started");
       let fileData: string | undefined, mimeType: string | undefined;
       if (file) { fileData = await fileToBase64(file); mimeType = file.type; }
       const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ module: "safetynet", text: text || undefined, fileData, mimeType }) });
@@ -114,7 +116,19 @@ export default function SafetyNetPage() {
                 {/* Location */}
                 <div style={{ background: "rgba(5,8,16,0.5)", borderRadius: 8, padding: "10px 14px", marginBottom: 12, borderLeft: "3px solid #f97316" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><MapPin size={12} color="#f97316" /><span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>LOCATION</span></div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{result.location.described}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{result.location.described}</div>
+                  
+                  {/* Google Maps Integration */}
+                  <iframe
+                    width="100%"
+                    height="180"
+                    style={{ border: 0, borderRadius: 8, marginBottom: 12 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "YOUR_API_KEY_HERE"}&q=${encodeURIComponent(result.location.described)}`}
+                  ></iframe>
+
                   {result.location.landmarks.length > 0 && <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>Landmarks: {result.location.landmarks.join(", ")}</div>}
                 </div>
 

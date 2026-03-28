@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { logClientEvent } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { BookOpen, Zap, AlertTriangle, Scale, Calendar, DollarSign, CheckCircle, FileText, Clock, Download, Users, List, ChevronRight } from "lucide-react";
@@ -30,6 +31,7 @@ export default function DocUnlockPage() {
     if (!text && !file) { toast.error("Provide text or upload a document"); return; }
     setLoading(true); setResult(null);
     try {
+      logClientEvent("docunlock", "analyze_started");
       let fileData: string | undefined, mimeType: string | undefined;
       if (file) { fileData = await fileToBase64(file); mimeType = file.type; }
       const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ module: "docunlock", text: text || undefined, fileData, mimeType }) });

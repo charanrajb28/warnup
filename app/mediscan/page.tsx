@@ -13,6 +13,7 @@ import ConfidenceBar from "@/components/ConfidenceBar";
 import FollowUpChat from "@/components/FollowUpChat";
 import { MediScanResult } from "@/types";
 import { fileToBase64, getSeverityColor, getSeverityBadgeClass, formatProcessingTime } from "@/lib/utils";
+import { logClientEvent } from "@/lib/firebase";
 
 export default function MediScanPage() {
   const [text, setText] = useState("");
@@ -25,6 +26,7 @@ export default function MediScanPage() {
     if (!text && !file) { toast.error("Please provide text or upload a file"); return; }
     setLoading(true); setResult(null);
     try {
+      logClientEvent("mediscan", "analyze_started");
       let fileData: string | undefined, mimeType: string | undefined;
       if (file) { fileData = await fileToBase64(file); mimeType = file.type; }
       const res = await fetch("/api/analyze", {
