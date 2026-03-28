@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProModel, getFlashModel, fileToGenerativePart } from "@/lib/gemini";
+import { getProModel, getFlashModel } from "@/lib/gemini";
+
+// Force dynamic: prevents Next.js from statically evaluating this route at build time.
+// The Gemini API key is only available at runtime (Cloud Run env vars), not during `npm run build`.
+export const dynamic = "force-dynamic";
 import {
   MEDISCAN_PROMPT,
   VOICEBRIDGE_PROMPT,
