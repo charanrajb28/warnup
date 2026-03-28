@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { logClientEvent } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {

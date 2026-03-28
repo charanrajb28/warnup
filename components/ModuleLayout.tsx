@@ -17,7 +17,6 @@ export default function ModuleLayout({
   title,
   subtitle,
   icon: Icon,
-  color,
   gradient,
   backHref = "/",
 }: ModuleLayoutProps) {

@@ -5,8 +5,15 @@ import { db } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Clock } from "lucide-react";
 
+interface ClientEvent {
+  id: string;
+  module: string;
+  action: string;
+  [key: string]: unknown;
+}
+
 export default function LiveFeed() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<ClientEvent[]>([]);
 
   useEffect(() => {
     if (!db) return;
@@ -22,7 +29,7 @@ export default function LiveFeed() {
         id: doc.id,
         ...doc.data()
       }));
-      setEvents(newEvents);
+      setEvents(newEvents as ClientEvent[]);
     }, (error) => {
       console.warn("Firebase LiveFeed error (expected if missing credentials):", error);
     });
@@ -41,9 +48,9 @@ export default function LiveFeed() {
         </h3>
       </div>
       
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div aria-live="polite" aria-atomic="false" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <AnimatePresence>
-          {events.map((evt, i) => (
+          {events.map((evt) => (
             <motion.div
               key={evt.id}
               initial={{ opacity: 0, x: -10 }}

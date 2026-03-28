@@ -114,7 +114,7 @@ export default function FollowUpChat({ moduleName, contextData, color = "#3b82f6
             </div>
 
             {/* Message Area */}
-            <div style={{ flex: 1, padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div aria-live="polite" aria-atomic="false" style={{ flex: 1, padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
               {messages.length === 0 ? (
                 <div style={{ margin: "auto", textAlign: "center", color: "var(--text-muted)" }}>
                   <MessageSquare size={32} style={{ margin: "0 auto 10px", opacity: 0.5 }} />
@@ -150,6 +150,7 @@ export default function FollowUpChat({ moduleName, contextData, color = "#3b82f6
             {/* Input Area */}
             <form onSubmit={handleSubmit} style={{ padding: 14, borderTop: "1px solid var(--border)", background: "rgba(5,8,16,0.5)", display: "flex", gap: 8 }}>
               <input
+                aria-label="Chat input message"
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Type your question..."
@@ -157,7 +158,7 @@ export default function FollowUpChat({ moduleName, contextData, color = "#3b82f6
                 onFocus={(e) => (e.target.style.borderColor = `${color}80`)}
                 onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
               />
-              <button type="submit" disabled={isLoading || !input.trim()} style={{ width: 40, height: 40, borderRadius: 20, background: input.trim() ? color : "var(--bg)", border: "none", color: "white", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "default", opacity: input.trim() ? 1 : 0.5, transition: "all 0.2s" }}>
+              <button type="submit" aria-label="Send message" disabled={isLoading || !input.trim()} style={{ width: 40, height: 40, borderRadius: 20, background: input.trim() ? color : "var(--bg)", border: "none", color: "white", display: "flex", alignItems: "center", justifyContent: "center", cursor: input.trim() ? "pointer" : "default", opacity: input.trim() ? 1 : 0.5, transition: "all 0.2s" }}>
                 <Send size={16} style={{ marginLeft: -2 }} />
               </button>
             </form>

@@ -1,0 +1,22 @@
+app/api/chat/route.ts(1,22): error TS2724: '"ai"' has no exported member named 'Message'. Did you mean 'UIMessage'?
+app/docunlock/page.tsx(260,55): error TS2322: Type 'DocUnlockResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'DocUnlockResult'.
+app/mediscan/page.tsx(353,54): error TS2322: Type 'MediScanResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'MediScanResult'.
+app/newsfilter/page.tsx(274,56): error TS2322: Type 'NewsFilterResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'NewsFilterResult'.
+app/safetynet/page.tsx(264,55): error TS2322: Type 'SafetyNetResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'SafetyNetResult'.
+app/voicebridge/page.tsx(359,57): error TS2322: Type 'VoiceBridgeResult' is not assignable to type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type 'VoiceBridgeResult'.
+components/FollowUpChat.tsx(17,21): error TS2339: Property 'input' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+components/FollowUpChat.tsx(17,28): error TS2339: Property 'handleInputChange' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+components/FollowUpChat.tsx(17,47): error TS2339: Property 'handleSubmit' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+components/FollowUpChat.tsx(17,61): error TS2339: Property 'isLoading' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+components/FollowUpChat.tsx(18,5): error TS2353: Object literal may only specify known properties, and 'api' does not exist in type 'UseChatOptions<UIMessage<unknown, UIDataTypes, UITools>>'.
+components/FollowUpChat.tsx(129,26): error TS2339: Property 'content' does not exist on type 'UIMessage<unknown, UIDataTypes, UITools>'.
+components/FollowUpChat.tsx(129,52): error TS7006: Parameter 'line' implicitly has an 'any' type.
+components/FollowUpChat.tsx(129,58): error TS7006: Parameter 'i' implicitly has an 'any' type.
+components/LiveFeed.tsx(32,17): error TS2345: Argument of type '{ id: string; }[]' is not assignable to parameter of type 'SetStateAction<ClientEvent[]>'.
+  Type '{ id: string; }[]' is not assignable to type 'ClientEvent[]'.
+    Type '{ id: string; }' is missing the following properties from type 'ClientEvent': module, action

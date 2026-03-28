@@ -36,7 +36,7 @@ export function getPubSub() {
  * Saves analysis record to Google Cloud Firestore natively.
  * Meets Google Services criteria natively.
  */
-export async function saveAnalysisToFirestore(moduleId: string, data: any) {
+export async function saveAnalysisToFirestore(moduleId: string, data: Record<string, unknown>) {
   try {
     const db = getFirestore();
     if (!db) return;

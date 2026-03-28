@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { streamText, CoreMessage } from "ai";
+import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
 import { NextResponse } from "next/server";
 
@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const { messages, contextData, moduleName } = (await req.json()) as {
-      messages: CoreMessage[];
-      contextData: any;
-      moduleName: string;
-    };
+        messages: any[];
+        contextData: any;
+        moduleName: string;
+      };
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(

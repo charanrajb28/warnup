@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, File, X, Image, FileText, Mic } from "lucide-react";
+import { Upload, File, X, Image, FileText } from "lucide-react";
 
 interface InputZoneProps {
   onTextChange: (text: string) => void;
@@ -20,7 +20,6 @@ export default function InputZone({
     "text/*": [".txt", ".md"],
   },
   placeholder = "Paste text, drop a file, or upload an image...",
-  showVoice = false,
 }: InputZoneProps) {
   const [text, setText] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);

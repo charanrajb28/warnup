@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const executionTime = Date.now() - startTime;
     Promise.all([
       saveAnalysisToFirestore(module, parsed),
-      ...parsed.criticalFlags?.map((flag: any) =>
+      ...parsed.criticalFlags?.map((flag: Record<string, string>) =>
         publishCriticalAlert(module, flag.urgency, flag.flag)
       ) || []
     ]).catch(console.error);
