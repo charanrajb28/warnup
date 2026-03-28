@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import ModuleLayout from "@/components/ModuleLayout";
 import ConfidenceBar from "@/components/ConfidenceBar";
+import FollowUpChat from "@/components/FollowUpChat";
 import { VoiceBridgeResult } from "@/types";
 import { formatProcessingTime, getSeverityBadgeClass, getSeverityColor, capitalize } from "@/lib/utils";
 
@@ -355,6 +356,7 @@ export default function VoiceBridgePage() {
           )}
         </AnimatePresence>
       </div>
+      {result && <FollowUpChat moduleName="VoiceBridge" contextData={result} color="#3b82f6" />}
     </ModuleLayout>
   );
 }

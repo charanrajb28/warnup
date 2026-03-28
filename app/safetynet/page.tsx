@@ -6,6 +6,7 @@ import { AlertOctagon, Zap, MapPin, AlertTriangle, Clock, Radio, Flame, Briefcas
 import ModuleLayout from "@/components/ModuleLayout";
 import InputZone from "@/components/InputZone";
 import ConfidenceBar from "@/components/ConfidenceBar";
+import FollowUpChat from "@/components/FollowUpChat";
 import { SafetyNetResult } from "@/types";
 import { fileToBase64, getSeverityBadgeClass, getSeverityColor, formatProcessingTime } from "@/lib/utils";
 
@@ -246,6 +247,7 @@ export default function SafetyNetPage() {
           )}
         </AnimatePresence>
       </div>
+      {result && <FollowUpChat moduleName="SafetyNet" contextData={result} color="#f59e0b" />}
     </ModuleLayout>
   );
 }

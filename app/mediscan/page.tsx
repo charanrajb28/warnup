@@ -10,6 +10,7 @@ import {
 import ModuleLayout from "@/components/ModuleLayout";
 import InputZone from "@/components/InputZone";
 import ConfidenceBar from "@/components/ConfidenceBar";
+import FollowUpChat from "@/components/FollowUpChat";
 import { MediScanResult } from "@/types";
 import { fileToBase64, getSeverityColor, getSeverityBadgeClass, formatProcessingTime } from "@/lib/utils";
 
@@ -347,6 +348,7 @@ export default function MediScanPage() {
           )}
         </AnimatePresence>
       </div>
+      {result && <FollowUpChat moduleName="MediScan" contextData={result} color="#ef4444" />}
     </ModuleLayout>
   );
 }

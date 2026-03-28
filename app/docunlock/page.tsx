@@ -6,6 +6,7 @@ import { BookOpen, Zap, AlertTriangle, Scale, Calendar, DollarSign, CheckCircle,
 import ModuleLayout from "@/components/ModuleLayout";
 import InputZone from "@/components/InputZone";
 import ConfidenceBar from "@/components/ConfidenceBar";
+import FollowUpChat from "@/components/FollowUpChat";
 import { DocUnlockResult } from "@/types";
 import { fileToBase64, getSeverityBadgeClass, getSeverityColor, formatProcessingTime } from "@/lib/utils";
 
@@ -254,6 +255,7 @@ export default function DocUnlockPage() {
           )}
         </AnimatePresence>
       </div>
+      {result && <FollowUpChat moduleName="DocUnlock" contextData={result} color="#8b5cf6" />}
     </ModuleLayout>
   );
 }

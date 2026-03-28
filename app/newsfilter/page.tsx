@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Newspaper, Zap, Globe, Clock, Users, CheckCircle, TrendingUp, Download, ShieldCheck, AlarmClock, Crosshair, Scale, AlertTriangle } from "lucide-react";
 import ModuleLayout from "@/components/ModuleLayout";
 import ConfidenceBar from "@/components/ConfidenceBar";
+import FollowUpChat from "@/components/FollowUpChat";
 import { NewsFilterResult } from "@/types";
 import { getSeverityBadgeClass, formatProcessingTime, capitalize } from "@/lib/utils";
 
@@ -268,6 +269,7 @@ export default function NewsFilterPage() {
           )}
         </AnimatePresence>
       </div>
+      {result && <FollowUpChat moduleName="NewsFilter" contextData={result} color="#06b6d4" />}
     </ModuleLayout>
   );
 }
