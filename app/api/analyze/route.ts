@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiPro, geminiFlash, fileToGenerativePart } from "@/lib/gemini";
+import { getProModel, getFlashModel, fileToGenerativePart } from "@/lib/gemini";
 import {
   MEDISCAN_PROMPT,
   VOICEBRIDGE_PROMPT,
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { module, text, fileData, mimeType } = body as {
       module: ModuleType;
       text?: string;
-      fileData?: string; // base64 encoded
+      fileData?: string;
       mimeType?: string;
     };
 
@@ -38,35 +38,32 @@ export async function POST(request: NextRequest) {
     }
 
     const prompt = PROMPTS[module];
-    const parts = [];
 
+    // Build content parts
+    const contentParts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
     if (fileData && mimeType) {
-      parts.push(fileToGenerativePart(fileData, mimeType));
+      contentParts.push({ inlineData: { data: fileData, mimeType } });
     }
-
-    const model = fileData ? geminiPro : geminiFlash;
 
     const inputText = text
       ? `${prompt}\n\nINPUT TO ANALYZE:\n${text}`
       : `${prompt}\n\nAnalyze the provided file/image above and extract all relevant information.`;
 
-    const contentParts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
-    if (fileData && mimeType) {
-      contentParts.push({ inlineData: { data: fileData, mimeType } });
-    }
     contentParts.push({ text: inputText });
+
+    // Use Pro for multimodal (file) inputs, Flash for text-only
+    const model = fileData ? getProModel() : getFlashModel();
 
     const result = await model.generateContent(contentParts);
     const responseText = result.response.text();
 
     let parsed;
     try {
-      // Strip markdown code fences if present
       const cleaned = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
       return NextResponse.json(
-        { success: false, error: "Failed to parse AI response as JSON", raw: responseText },
+        { success: false, error: "Failed to parse AI response", raw: responseText },
         { status: 500 }
       );
     }
