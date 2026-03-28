@@ -14,14 +14,14 @@ function getClient() {
 
 export function getProModel() {
   return getClient().getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-2.5-pro",
     generationConfig: { responseMimeType: "application/json" },
   });
 }
 
 export function getFlashModel() {
   return getClient().getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     generationConfig: { responseMimeType: "application/json" },
   });
 }

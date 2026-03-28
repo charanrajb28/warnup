@@ -2,239 +2,246 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { ShieldAlert, Zap, MapPin, Users, AlertTriangle, Phone, Clock, Radio, Download, Activity, Siren } from "lucide-react";
+import { AlertOctagon, Zap, MapPin, AlertTriangle, Clock, Radio, Flame, Briefcase, Download, Crosshair } from "lucide-react";
 import ModuleLayout from "@/components/ModuleLayout";
+import InputZone from "@/components/InputZone";
 import ConfidenceBar from "@/components/ConfidenceBar";
 import { SafetyNetResult } from "@/types";
-import { getSeverityColor, getSeverityBadgeClass, formatProcessingTime, capitalize } from "@/lib/utils";
+import { fileToBase64, getSeverityBadgeClass, getSeverityColor, formatProcessingTime } from "@/lib/utils";
 
-const EMERGENCY_ICONS: Record<string, string> = {
-  medical: "🏥", fire: "🔥", security: "🔒", natural_disaster: "🌪️",
-  mental_health: "🧠", domestic: "🏠", missing_person: "🔍", accident: "🚗", other: "⚠️",
-};
-const AGENCY_COLORS: Record<string, string> = {
-  police: "#3b82f6", fire: "#ef4444", ems: "#10b981",
-  coastguard: "#06b6d4", mental_health: "#8b5cf6",
-  social_services: "#f59e0b", other: "#94a3b8",
-};
-const TIMEFRAME_ORDER = ["immediate", "within_5min", "within_15min", "within_1hr"];
+const TRIAGE_COLORS: Record<string, string> = { Red: "#ef4444", Yellow: "#f59e0b", Green: "#10b981", Black: "#1e293b", Unknown: "#94a3b8" };
 
 export default function SafetyNetPage() {
   const [text, setText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SafetyNetResult | null>(null);
   const [processingTime, setProcessingTime] = useState<number | null>(null);
 
   const handleAnalyze = async () => {
-    if (!text.trim()) { toast.error("Please describe the emergency or safety situation"); return; }
+    if (!text && !file) { toast.error("Provide an emergency description or upload a photo"); return; }
     setLoading(true); setResult(null);
     try {
-      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ module: "safetynet", text }) });
+      let fileData: string | undefined, mimeType: string | undefined;
+      if (file) { fileData = await fileToBase64(file); mimeType = file.type; }
+      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ module: "safetynet", text: text || undefined, fileData, mimeType }) });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Analysis failed");
+      if (!data.success) throw new Error(data.error);
       setResult(data.result as SafetyNetResult);
       setProcessingTime(data.processingTime);
-      toast.success("Emergency plan generated!");
+      toast.success("Response plan generated");
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Analysis failed"); }
     finally { setLoading(false); }
   };
 
   const downloadJSON = () => {
     if (!result) return;
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "safetynet-result.json"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], { type: "application/json" })); a.download = "safetynet-ics201.json"; a.click();
   };
 
-  const severityIsHigh = result && ["high", "critical", "life_threatening"].includes(result.severity);
+  const SAMPLES = [
+    "Large fire reported in apartment building at 123 Main Street. Residents visible on balconies on floors 4-6. Fire spreading from 2nd floor. About 50 residents in building. Smell of gas reported by bystanders.",
+    "Multiple vehicle collision on I-95 Northbound near Exit 42. At least 4 cars and 1 semi-truck involved. Truck is leaking unknown green fluid. Several people trapped in cars. Traffic completely stopped.",
+  ];
 
   return (
-    <ModuleLayout title="SafetyNet" subtitle="Emergency Response Coordinator" icon={ShieldAlert} color="#f59e0b" gradient="linear-gradient(135deg,#f59e0b,#ef4444)">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,#f59e0b,#ef4444)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <ShieldAlert size={28} color="white" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 32, fontWeight: 800, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "-0.03em" }}>SafetyNet</h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: 15 }}>Describe any emergency — get a complete, prioritized response action plan</p>
-          </div>
+    <ModuleLayout title="SafetyNet" subtitle="Emergency Management" icon={AlertOctagon} color="#f59e0b" gradient="linear-gradient(135deg,#f59e0b,#ef4444)">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg,#f59e0b,#ef4444)", display: "flex", alignItems: "center", justifyContent: "center" }}><AlertOctagon size={26} color="white" /></div>
+          <div><h1 style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "-0.03em" }}>SafetyNet</h1><p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Chaotic emergency report → Command-ready ICS-201 Incident Brief instantly</p></div>
         </div>
       </motion.div>
 
-      <div style={{ display: "grid", gridTemplateColumns: result ? "1fr 1.4fr" : "1fr", gap: 24 }}>
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-          <div className="section-card" style={{ borderColor: "rgba(245,158,11,0.25)" }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}><Siren size={15} color="#f59e0b" /> Emergency Description</h2>
-            <textarea
-              value={text} onChange={e => setText(e.target.value)}
-              placeholder="Describe the emergency situation in detail: what happened, where, who is involved, any known injuries, immediate dangers...
-
-Example: 'There's been a car accident on Highway 45 near Exit 12. Two vehicles involved. One person appears unconscious and trapped. Fuel leaking from one car. About 6 other people standing around, some injured.'"
-              style={{ width: "100%", minHeight: 220, background: "rgba(5,8,16,0.5)", border: "1px solid var(--border)", borderRadius: 10, padding: "14px 16px", color: "var(--text-primary)", fontSize: 13, lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit" }}
-              onFocus={e => (e.target.style.borderColor = "rgba(245,158,11,0.5)")}
-              onBlur={e => (e.target.style.borderColor = "var(--border)")}
-            />
-            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              <button className="btn-primary" onClick={handleAnalyze} disabled={loading} style={{ flex: 1, justifyContent: "center", background: "linear-gradient(135deg,#f59e0b,#ef4444)" }}>
-                {loading ? <><div className="spinner" style={{ width: 18, height: 18 }} /> Generating Plan...</> : <><Zap size={16} /> Generate Response Plan</>}
-              </button>
-              {result && <button className="btn-secondary" onClick={downloadJSON}><Download size={14} /></button>}
+      <div style={{ display: "grid", gridTemplateColumns: result ? "360px 1fr" : "600px", gap: 20, justifyContent: result ? "unset" : "center" }}>
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="section-card" style={{ borderColor: "rgba(245,158,11,0.2)" }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 7 }}><Radio size={14} color="#f59e0b" /> Incident Report Input</h2>
+            <InputZone onTextChange={setText} onFileChange={setFile} placeholder="Describe the emergency, or upload a photo of the scene..." acceptedTypes={{ "image/*": [".png", ".jpg", ".jpeg"] }} />
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <button className="btn-primary" onClick={handleAnalyze} disabled={loading} style={{ flex: 1, justifyContent: "center", background: "linear-gradient(135deg,#f59e0b,#ef4444)" }}>{loading ? <><div className="spinner" style={{ width: 16, height: 16 }} />Generating Plan...</> : <><Zap size={15} />Generate Plan</>}</button>
+              {result && <button className="btn-secondary" onClick={downloadJSON}><Download size={13} /></button>}
             </div>
-            {processingTime && <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 10, textAlign: "center" }}><Clock size={11} style={{ display: "inline" }} /> {formatProcessingTime(processingTime)}</p>}
+            {processingTime && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, textAlign: "center" }}><Clock size={10} style={{ display: "inline" }} /> {formatProcessingTime(processingTime)}</p>}
           </div>
-
-          {/* Sample scenarios */}
-          <div className="section-card" style={{ marginTop: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 10 }}>Sample Scenarios</p>
-            {[
-              "Elderly woman found unconscious at home by neighbor. Not breathing normally. No known medical history available. Address: 45 Oak Street, 3rd floor.",
-              "Large fire reported in apartment building at 123 Main Street. Residents visible on balconies on floors 4-6. Fire spreading from 2nd floor. About 50 residents in building.",
-              "Person calling in distress, crying, says they can't go on anymore. Won't give location. Has been talking for 10 minutes. Mentions being home alone.",
-            ].map((s, i) => (
-              <button key={i} onClick={() => setText(s)} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 12px", background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 7, color: "var(--text-secondary)", fontSize: 11, cursor: "pointer", marginBottom: 6, lineHeight: 1.5, transition: "all 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,158,11,0.1)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(245,158,11,0.05)")}
-              >{s.substring(0, 100)}…</button>
+          <div className="section-card">
+            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Try a Sample</p>
+            {SAMPLES.map((s, i) => (
+              <button key={i} onClick={() => setText(s)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 11px", background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 7, color: "var(--text-secondary)", fontSize: 11, cursor: "pointer", marginBottom: 5, lineHeight: 1.5, transition: "all 0.18s" }} onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,158,11,0.1)")} onMouseLeave={e => (e.currentTarget.style.background = "rgba(245,158,11,0.05)")}>{s.substring(0, 100)}…</button>
             ))}
           </div>
         </motion.div>
 
-        {/* Results */}
         <AnimatePresence>
           {result && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-              {/* Emergency header */}
-              <div className={`section-card ${severityIsHigh ? "pulse-red" : ""}`} style={{ borderColor: `${getSeverityColor(result.severity)}55`, background: `${getSeverityColor(result.severity)}08` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <span style={{ fontSize: 36 }}>{EMERGENCY_ICONS[result.emergencyType] || "⚠️"}</span>
-                    <div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>EMERGENCY TYPE</div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: getSeverityColor(result.severity) }}>{capitalize(result.emergencyType)}</div>
+              {/* Immediate Risks (Critical Flags) */}
+              {result.immediateRisks?.length > 0 && (
+                <div className="section-card pulse-red" style={{ borderColor: "rgba(239,68,68,0.5)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}><AlertTriangle size={15} color="#ef4444" /><span style={{ fontSize: 14, fontWeight: 800, color: "#ef4444" }}>⚠ Immediate Hazards & Risks</span></div>
+                  {result.immediateRisks.map((risk, i) => (
+                    <div key={i} style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 9, padding: "10px 14px", marginBottom: 7 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{risk.risk}</span>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {risk.timeframe && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{risk.timeframe}</span>}
+                          <span className={`badge ${getSeverityBadgeClass(risk.probability === "high" ? "critical" : risk.probability)}`}>{risk.probability} Prob.</span>
+                        </div>
+                      </div>
+                      {risk.impact && <p style={{ fontSize: 12, color: "#f97316", marginBottom: 4 }}>Impact: {risk.impact}</p>}
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>→ Mitigation: {risk.mitigation}</p>
                     </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Incident Brief (Overview) */}
+              <div className="section-card" style={{ borderColor: "rgba(245,158,11,0.2)", background: "rgba(245,158,11,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{result.incidentId || "INCIDENT BRIEF"}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800 }}>{result.emergencyType}</div>
+                    {result.emergencySubtype && <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{result.emergencySubtype}</div>}
                   </div>
-                  <span className={`badge ${getSeverityBadgeClass(result.severity)}`} style={{ fontSize: 13, padding: "5px 14px" }}>
-                    {result.severity.toUpperCase().replace(/_/g, " ")}
-                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <span className={`badge ${getSeverityBadgeClass(result.severity)}`} style={{ padding: "4px 12px", fontSize: 13 }}>LEVEL: {result.severity.toUpperCase()}</span>
+                    {result.icsLevel && <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 8px", borderRadius: 100 }}>{result.icsLevel}</span>}
+                  </div>
                 </div>
 
-                <div style={{ padding: "12px 16px", background: `${getSeverityColor(result.severity)}12`, border: `1px solid ${getSeverityColor(result.severity)}33`, borderRadius: 10, marginBottom: 14 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: getSeverityColor(result.severity), lineHeight: 1.6 }}>{result.summary}</p>
+                {/* Location */}
+                <div style={{ background: "rgba(5,8,16,0.5)", borderRadius: 8, padding: "10px 14px", marginBottom: 12, borderLeft: "3px solid #f97316" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><MapPin size={12} color="#f97316" /><span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>LOCATION</span></div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{result.location.described}</div>
+                  {result.location.landmarks.length > 0 && <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>Landmarks: {result.location.landmarks.join(", ")}</div>}
                 </div>
 
-                {result.location.described !== "Not specified" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13, color: "var(--text-secondary)" }}>
-                    <MapPin size={14} color="#f59e0b" />
-                    <span>{result.location.described}</span>
-                    {result.location.landmarks.length > 0 && <span style={{ color: "var(--text-muted)" }}>· Near: {result.location.landmarks.join(", ")}</span>}
-                  </div>
-                )}
-
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 12 }}>{result.summary}</p>
+                {result.commandBrief && <p style={{ fontSize: 12, color: "#f59e0b", fontStyle: "italic", padding: "8px 12px", background: "rgba(245,158,11,0.05)", borderLeft: "2px solid #f59e0b", borderRadius: "0 6px 6px 0", marginBottom: 12 }}>{result.commandBrief}</p>}
+                
                 <ConfidenceBar score={result.confidenceScore} />
               </div>
 
-              {/* Response Actions - sorted by priority */}
+              {/* Response Actions (Priority) */}
               {result.responseActions?.length > 0 && (
-                <div className="section-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><Activity size={15} color="#ef4444" /><span style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>Response Actions</span></div>
-                  {[...result.responseActions]
-                    .sort((a, b) => TIMEFRAME_ORDER.indexOf(a.timeFrame) - TIMEFRAME_ORDER.indexOf(b.timeFrame))
-                    .map((action, i) => (
-                      <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", background: `${AGENCY_COLORS[action.agency] || "#94a3b8"}10`, border: `1px solid ${AGENCY_COLORS[action.agency] || "#94a3b8"}30`, borderRadius: 9, marginBottom: 8 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: AGENCY_COLORS[action.agency] || "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "white", flexShrink: 0 }}>{action.priority}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{action.action}</div>
-                          <div style={{ fontSize: 11, marginTop: 4, display: "flex", gap: 10 }}>
-                            <span style={{ color: AGENCY_COLORS[action.agency] || "#94a3b8", fontWeight: 600, textTransform: "uppercase" }}>{action.agency}</span>
-                            <span style={{ color: "var(--text-muted)" }}>· {action.timeFrame.replace(/_/g, " ")}</span>
-                          </div>
+                <div className="section-card" style={{ borderColor: "rgba(16,185,129,0.2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><Zap size={15} color="#10b981" /><span style={{ fontSize: 14, fontWeight: 600, color: "#10b981" }}>Prioritized Response Actions</span></div>
+                  {result.responseActions.map((action, i) => (
+                    <div key={i} style={{ display: "flex", gap: 11, alignItems: "flex-start", padding: "10px 13px", background: `${getSeverityColor(action.priority === 1 ? "critical" : action.priority === 2 ? "high" : "medium")}0d`, border: `1px solid ${getSeverityColor(action.priority === 1 ? "critical" : action.priority === 2 ? "high" : "medium")}30`, borderRadius: 8, marginBottom: 6 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: getSeverityColor(action.priority === 1 ? "critical" : action.priority === 2 ? "high" : "medium"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "white", flexShrink: 0 }}>{action.priority}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: action.priority === 1 ? 600 : 400 }}>{action.action}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                          <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{action.agency}</span>
+                          {action.timeFrame && <span style={{ marginLeft: 6 }}>· {action.timeFrame}</span>}
                         </div>
                       </div>
-                    ))}
-                </div>
-              )}
-
-              {/* Immediate Risks */}
-              {result.immediateRisks?.length > 0 && (
-                <div className="section-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><AlertTriangle size={15} color="#f59e0b" /><span style={{ fontSize: 14, fontWeight: 600 }}>Immediate Risks</span></div>
-                  {result.immediateRisks.map((risk, i) => (
-                    <div key={i} style={{ padding: "10px 14px", background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 8, marginBottom: 6 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{risk.risk}</span>
-                        <span className={`badge ${getSeverityBadgeClass(risk.probability)}`}>{risk.probability} prob.</span>
-                      </div>
-                      <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>Mitigation: {risk.mitigation}</p>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Persons Involved */}
-              {result.personsInvolved?.length > 0 && (
+              {/* Casualty & Triage */}
+              {(result.casualtyAssessment || result.triageProtocol) && (
                 <div className="section-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><Users size={15} color="#8b5cf6" /><span style={{ fontSize: 14, fontWeight: 600 }}>Persons Involved</span></div>
-                  {result.personsInvolved.map((p, i) => (
-                    <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 12, alignItems: "center", padding: "10px 14px", background: "rgba(5,8,16,0.4)", borderRadius: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, color: "#8b5cf6", fontWeight: 700, textTransform: "uppercase", background: "rgba(139,92,246,0.1)", padding: "3px 8px", borderRadius: 4 }}>{p.role}</span>
-                      <span style={{ fontSize: 13 }}>{p.description}</span>
-                      {p.condition && <span style={{ fontSize: 12, color: getSeverityColor(p.condition.includes("critical") || p.condition.includes("unconscious") ? "critical" : p.condition.includes("injured") ? "medium" : "low") }}>{p.condition}</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Resources Needed */}
-              {result.resourcesNeeded?.length > 0 && (
-                <div className="section-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><Radio size={15} color="#06b6d4" /><span style={{ fontSize: 14, fontWeight: 600 }}>Resources Required</span></div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {result.resourcesNeeded.map((r, i) => (
-                      <span key={i} style={{ padding: "6px 14px", background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)", borderRadius: 8, fontSize: 13, color: "#06b6d4" }}>{r}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Communication Protocol */}
-              {result.communicationProtocol && (
-                <div className="section-card" style={{ borderColor: "rgba(59,130,246,0.2)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><Phone size={15} color="#3b82f6" /><span style={{ fontSize: 14, fontWeight: 600 }}>Communication Protocol</span></div>
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 6 }}>NOTIFY AGENCIES:</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {result.communicationProtocol.notifyAgencies.map((agency, i) => (
-                        <span key={i} style={{ padding: "4px 12px", background: `${AGENCY_COLORS[agency.toLowerCase()] || "#94a3b8"}15`, border: `1px solid ${AGENCY_COLORS[agency.toLowerCase()] || "#94a3b8"}40`, borderRadius: 100, fontSize: 12, color: AGENCY_COLORS[agency.toLowerCase()] || "#94a3b8", fontWeight: 600 }}>{agency}</span>
-                      ))}
-                    </div>
-                  </div>
-                  {result.communicationProtocol.publicAlert && (
-                    <div style={{ padding: "8px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 10 }}>
-                      🔔 Public Alert Recommended
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><Crosshair size={15} color="#ef4444" /><span style={{ fontSize: 14, fontWeight: 600 }}>Triage & Casualties</span></div>
+                  
+                  {result.casualtyAssessment?.estimated && (
+                    <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(5,8,16,0.5)", borderRadius: 9, padding: "12px 16px", marginBottom: 12 }}>
+                      <div style={{ textAlign: "center" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Total</div><div style={{ fontSize: 20, fontWeight: 800 }}>{result.casualtyAssessment.estimated.total}</div></div>
+                      <div style={{ width: 1, background: "var(--border)" }} />
+                      <div style={{ textAlign: "center" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Critical</div><div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>{result.casualtyAssessment.estimated.critical}</div></div>
+                      <div style={{ width: 1, background: "var(--border)" }} />
+                      <div style={{ textAlign: "center" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Serious</div><div style={{ fontSize: 20, fontWeight: 800, color: "#f97316" }}>{result.casualtyAssessment.estimated.serious}</div></div>
+                      <div style={{ width: 1, background: "var(--border)" }} />
+                      <div style={{ textAlign: "center" }}><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Fatal</div><div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-secondary)" }}>{result.casualtyAssessment.estimated.fatalities}</div></div>
                     </div>
                   )}
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{result.communicationProtocol.mediaGuidance}</p>
+
+                  {result.triageProtocol && (
+                    <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 8, padding: "10px 14px" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", marginBottom: 6 }}>{result.triageProtocol.system.toUpperCase()} PROTOCOL</div>
+                      {result.triageProtocol.immediateActions.map((a, i) => (
+                        <div key={i} style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 3 }}>• {a}</div>
+                      ))}
+                    </div>
+                  )}
+
+                  {result.personsInvolved?.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>KNOWN SUBJECTS</div>
+                      {result.personsInvolved.map((p, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "rgba(5,8,16,0.3)", borderRadius: 6, marginBottom: 4, borderLeft: p.triageTag ? `3px solid ${TRIAGE_COLORS[p.triageTag] || "#94a3b8"}` : "none" }}>
+                          <div><span style={{ fontSize: 12, fontWeight: 600 }}>{p.role}</span><span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 6 }}>{p.description}</span></div>
+                          {p.triageTag && <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: 4, fontWeight: 700, color: TRIAGE_COLORS[p.triageTag] }}>{p.triageTag}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Timeline */}
-              {result.timeline?.length > 0 && (
+              {/* ICS Structure */}
+              {result.incidentCommandStructure && (
                 <div className="section-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><Clock size={15} color="#06b6d4" /><span style={{ fontSize: 14, fontWeight: 600 }}>Response Timeline</span></div>
-                  <div style={{ position: "relative", paddingLeft: 28 }}>
-                    <div style={{ position: "absolute", left: 10, top: 6, bottom: 6, width: 1, background: "var(--border)" }} />
-                    {result.timeline.map((t, i) => (
-                      <div key={i} style={{ position: "relative", marginBottom: 16 }}>
-                        <div style={{ position: "absolute", left: -23, top: 3, width: 10, height: 10, borderRadius: "50%", background: t.status === "completed" ? "#10b981" : t.status === "in_progress" ? "#f59e0b" : "#475569", border: "2px solid var(--bg-card)" }} />
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 3 }}>{t.time}</div>
-                        <div style={{ fontSize: 13 }}>{t.action}</div>
-                        <div style={{ fontSize: 11, padding: "2px 8px", background: t.status === "completed" ? "rgba(16,185,129,0.1)" : t.status === "in_progress" ? "rgba(245,158,11,0.1)" : "rgba(71,85,105,0.2)", color: t.status === "completed" ? "#10b981" : t.status === "in_progress" ? "#f59e0b" : "#475569", borderRadius: 100, display: "inline-block", marginTop: 4 }}>{t.status.replace(/_/g, " ")}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><Briefcase size={15} color="#8b5cf6" /><span style={{ fontSize: 14, fontWeight: 600 }}>ICS Command Structure</span></div>
+                  {result.incidentCommandStructure.commandPost && <div style={{ fontSize: 13, marginBottom: 10 }}><strong>Command Post:</strong> {result.incidentCommandStructure.commandPost}</div>}
+                  {result.incidentCommandStructure.sections && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {Object.entries(result.incidentCommandStructure.sections).map(([sec, desc]) => (
+                        <div key={sec} style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 8, padding: "8px 12px" }}>
+                          <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>{sec}</div>
+                          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Hazmat & Evacuation */}
+              {(result.hazmatAssessment?.present || result.evacuationPlan?.required) && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  {result.hazmatAssessment?.present && (
+                    <div className="section-card" style={{ borderColor: "rgba(249,115,22,0.3)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}><Flame size={14} color="#f97316" /><span style={{ fontSize: 13, fontWeight: 700, color: "#f97316" }}>HAZMAT PRESENT</span></div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Substance: {result.hazmatAssessment.substance || "Unknown"}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Level: {result.hazmatAssessment.level}</div>
+                      {result.hazmatAssessment.evacuationRadius && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>Evac Radius: {result.hazmatAssessment.evacuationRadius}</div>}
+                    </div>
+                  )}
+                  {result.evacuationPlan?.required && (
+                    <div className="section-card" style={{ borderColor: "rgba(16,185,129,0.3)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}><AlertTriangle size={14} color="#10b981" /><span style={{ fontSize: 13, fontWeight: 700, color: "#10b981" }}>EVAC REQUIRED</span></div>
+                      {result.evacuationPlan.zones.length > 0 && <div style={{ fontSize: 12, marginBottom: 4 }}><strong>Zones:</strong> {result.evacuationPlan.zones.join(", ")}</div>}
+                      {result.evacuationPlan.shelterLocations.length > 0 && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}><strong>Shelters:</strong> {result.evacuationPlan.shelterLocations.join(", ")}</div>}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Communication Plan */}
+              {result.communicationPlan && (
+                <div className="section-card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><Radio size={15} color="#06b6d4" /><span style={{ fontSize: 14, fontWeight: 600 }}>Communication Plan</span></div>
+                  {result.communicationPlan.publicAlert && (
+                    <div style={{ padding: "6px 12px", background: "rgba(239,68,68,0.1)", color: "#ef4444", borderRadius: 6, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>🔔 Trigger Public Alert (EAS/WEA)</div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                    {result.communicationPlan.notifyAgencies.map((agency, i) => (
+                      <span key={i} style={{ padding: "4px 10px", background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)", borderRadius: 100, fontSize: 11, color: "#06b6d4" }}>{agency}</span>
+                    ))}
+                  </div>
+                  {result.communicationPlan.mediaGuidance && (
+                    <div style={{ background: "rgba(5,8,16,0.3)", padding: "10px", borderRadius: 8, borderLeft: "2px solid var(--border)" }}>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>MEDIA GUIDANCE</div>
+                      <div style={{ fontSize: 12, color: "var(--text-secondary)", fontStyle: "italic" }}>&quot;{result.communicationPlan.mediaGuidance}&quot;</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </motion.div>
           )}
         </AnimatePresence>

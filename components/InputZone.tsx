@@ -79,6 +79,7 @@ export default function InputZone({
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as "text" | "file")}
+            aria-label={`Switch to ${tab.label}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -108,6 +109,7 @@ export default function InputZone({
             setText(e.target.value);
             onTextChange(e.target.value);
           }}
+          aria-label="Text input area"
           placeholder={placeholder}
           style={{
             width: "100%",
@@ -157,6 +159,7 @@ export default function InputZone({
               </div>
               <button
                 className="btn-secondary"
+                aria-label={`Remove uploaded file ${uploadedFile.name}`}
                 onClick={removeFile}
                 style={{ padding: "6px 12px", fontSize: 12 }}
               >
@@ -179,7 +182,7 @@ export default function InputZone({
                 transition: "all 0.3s",
               }}
             >
-              <input {...getInputProps()} />
+              <input {...getInputProps()} aria-label="File upload dropzone" />
               <div
                 style={{
                   width: 56,
